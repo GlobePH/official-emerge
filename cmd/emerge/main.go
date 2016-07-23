@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -11,6 +12,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -19,11 +21,22 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("$DATABASE_URL must be set")
+	}
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
 	chain := alice.New(debug, logging, recovery)
 	mux := mux.NewRouter().StrictSlash(true)
 
 	apiMux := mux.PathPrefix("/api/").Subrouter()
-	apiMux.Handle("/subscription", chain.Then(subscription.Handler()))
+	apiMux.Handle("/subscription", chain.Then(subscription.Handler(db)))
 
 	mux.PathPrefix("/").Handler(chain.Then(http.FileServer(http.Dir("public"))))
 
