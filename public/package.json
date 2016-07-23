@@ -19,5 +19,17 @@
   "homepage": "https://github.com/jeepers-creepers/emerge#readme",
   "dependencies": {
     "bower": "^1.7.9"
+  },
+  "devDependencies": {
+    "browserify": "^13.0.1",
+    "gulp": "^3.9.1",
+    "gulp-bower-src": "^0.1.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-filter": "^4.0.0",
+    "gulp-load-plugins": "^1.2.4",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^1.5.4",
+    "main-bower-files": "^2.13.1",
+    "vinyl-source-stream": "^1.1.0"
   }
 }

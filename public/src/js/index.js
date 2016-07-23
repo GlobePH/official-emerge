@@ -22,10 +22,20 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
   /** Google Maps initialization **/
   uiGmapGoogleMapApiProvider.configure({
     // v: '3.20',
-    // libraries: 'weather, geometry, visualization'
+    libraries: 'weather, geometry, visualization'
   });
 
 }]);
+
+// emergeApp.config(['$routeProvider',
+//     function($routeProvider) {
+// 
+//   $routeProvider.when('/', {
+//     templateUrl:      'home.html',
+//     reloadOnSearch:   false
+//   });
+// 
+// }]);
 
 emergeApp.controller('MainController',
     [ '$rootScope',
@@ -50,34 +60,10 @@ emergeApp.controller('MainController',
 
 }]);
 
-/*
- * Database: Firebase
- * Url: https://sag1application-fe490.firebaseio.com/members 
- * Data strucure:
- * Training Document object:
- * {
- *  date: dateToday,
- *  attendance: [
- *    {fName: firstName, lName: lastName, paid: true},
- *    {fName: firstName, lName: lastName, paid: false},
- *  ],
- *  totalFeesCollected: 12345
- * }
- *
- * Member Document object:
- * {
- *  fName           : firstName.
- *  lName           : lastName,
- *  position        : bowOrStroke,
- *  memberSince     : dateOfMembership,
- *  totalDues       : runningTotalDue
- * }
- *
- * Non member Document object:
- * {
- *  fName           : firstName.
- *  lName           : lastName,
- *  position        : bowOrStroke,
- * }
- *
- */
+// emergeApp.controller('MainController',
+//     [ '$rootScope',
+//       '$scope',
+//     function($rootScope, $scope) {
+// 
+// 
+// }]);
