@@ -23,6 +23,16 @@
 		{
 			"ImportPath": "github.com/justinas/alice",
 			"Rev": "671ef6b31288a51b5517ba2f1349e781b91a4da3"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-84-g3cd0097",
+			"Rev": "3cd0097429be7d611bb644ef85b42bfb102ceea4"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/oid",
+			"Comment": "go1.0-cutoff-84-g3cd0097",
+			"Rev": "3cd0097429be7d611bb644ef85b42bfb102ceea4"
 		}
 	]
 }
