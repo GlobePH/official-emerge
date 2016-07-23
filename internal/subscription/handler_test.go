@@ -50,7 +50,9 @@ func TestSubscribe(t *testing.T) {
 }
 
 func TestNotModified(t *testing.T) {
-	setup()
+	if _, err := db.Exec("TRUNCATE TABLE subscribers"); err != nil {
+		log.Fatal(err)
+	}
 	s := subscriber{
 		AccesToken:       "1ixLbltjWkzwqLMXT-8UF-UQeKRma0hOOWFA6o91oXw",
 		SubscriberNumber: "9171234567",
@@ -69,11 +71,4 @@ func TestNotModified(t *testing.T) {
 	if w.Code != http.StatusNotModified {
 		t.Errorf("Did not respond with HTTP 304.\nCode: %d\t Body: %s\n", w.Code, w.Body.String())
 	}
-}
-
-func setup() error {
-	if _, err := db.Exec("TRUNCATE TABLE subscribers"); err != nil {
-		return err
-	}
-	return nil
 }
