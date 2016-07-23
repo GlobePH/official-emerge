@@ -1,7 +1,6 @@
 package subscription
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -17,26 +16,37 @@ type subscription struct {
 
 func Handler() http.Handler {
 	return handlers.MethodHandler{
+		http.MethodGet:  get(),
 		http.MethodPost: post(),
 	}
 }
 
+func get() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		s := subscription{
+			AccesToken:       q.Get("access_token"),
+			SubscriberNumber: q.Get("subscriber_number"),
+		}
+
+		if s.AccesToken == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Missing data: access_token.\n"))
+			return
+		}
+
+		if s.SubscriberNumber == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Missing data: subscriber_number.\n"))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fmt.Sprintf("%s successfully subscribed.\n", s.SubscriberNumber)))
+	})
+}
+
 func post() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.ContentLength == 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("No Content.\n"))
-			return
-		}
-
-		s := subscription{}
-		if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("JSON error: %v\n", err)))
-			return
-		}
-
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("%s successfully subscribed.\n", s.SubscriberNumber)))
 	})
 }
