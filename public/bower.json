@@ -1,0 +1,22 @@
+{
+  "name": "emerge",
+  "homepage": "https://github.com/jeepers-creepers/emerge",
+  "authors": [
+    "vuvuzella <j.tabacii@gmail.com>"
+  ],
+  "description": "",
+  "main": "index.html",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "mobile-angular-ui": "^1.2.1",
+    "angular": "^1.5.8",
+    "angular-google-maps": "^2.3.3"
+  }
+}
