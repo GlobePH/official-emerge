@@ -32,7 +32,10 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 emergeApp.factory('mySocket', function(socketFactory) {
   // var listenUrl = 'https://emerge-app.herokuapp.com/#/api/channel'
   var listenUrl = 'http://localhost/#/api/channel:3001'
-  var myIoSocket = io.connect(listenUrl);
+  var myIoSocket = io.connect(listenUrl).configure(function() {
+    io.set('transports', ['xhr-polling']);
+    io.set('polling duration', 10);
+  });
   var mySocket = socketFactory({
     ioSocket: myIoSocket
   });
