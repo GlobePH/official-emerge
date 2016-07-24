@@ -24,6 +24,7 @@
     "browserify": "^13.0.1",
     "gulp": "^3.9.1",
     "gulp-bower-src": "^0.1.0",
+    "gulp-clean": "^0.3.2",
     "gulp-concat": "^2.6.0",
     "gulp-filter": "^4.0.0",
     "gulp-load-plugins": "^1.2.4",

@@ -24,13 +24,29 @@ var destination = 'js';
 //     .pipe(gulp.dest("./js"));
 // });
 
+gulp.task('default', ['clean', 'js', 'css']);
+
+gulp.task('clean', function() {
+  var cleanThese = ['js/', 'css/'];
+  cleanThese.forEach(function(element, index, array) {
+    gulp.src(element, {read: false})
+      .pipe(plugins.clean());
+  });
+});
+
 gulp.task('js', function() {
   var jsFiles = ['src/js/*.js'];
    gulp.src(plugins.mainBowerFiles().concat(jsFiles)
-   .concat("http://maps.googleapis.com/maps/api/js?sensor=false&language=en")) 
+    .concat("http://maps.googleapis.com/maps/api/js?sensor=false&language=en")) 
     .pipe(plugins.filter('**/*.js'))
     .pipe(plugins.concat('main.min.js'))
     .pipe(gulp.dest('./js'));
-})
+});
 
-
+gulp.task('css', function() {
+  var cssFiles = ['src/css/*.css'];
+  return gulp.src(plugins.mainBowerFiles().concat(cssFiles))
+          .pipe(plugins.filter('**/*.css'))
+          .pipe(plugins.concat('main.min.css'))
+          .pipe(gulp.dest('./css'));
+});
