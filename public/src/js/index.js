@@ -29,18 +29,18 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 }]);
 
 // Socket.IO factory/service
-emergeApp.factory('mySocket', function(socketFactory) {
-  return socketFactory();
-  // var domainUrl = 'https://emerge-app.herokuapp.com';
-  // var listenUrl = '/api/channel'
-  // var myIoSocket = io.connect(domainUrl + listenUrl, {secure: true});
-
-  // var mySocket = socketFactory({
-  //   ioSocket: myIoSocket
-  // });
-
-  // return mySocket;
-});
+// emergeApp.factory('mySocket', function(socketFactory) {
+//   return socketFactory();
+//   var domainUrl = 'https://emerge-app.herokuapp.com';
+//   var listenUrl = '/api/channel'
+//   var myIoSocket = io.connect(domainUrl + listenUrl, {secure: true});
+// 
+//   var mySocket = socketFactory({
+//     ioSocket: myIoSocket
+//   });
+// 
+//   return mySocket;
+// });
 
 // Google plotter factory/service
 // emergeApp.service('plot' ,function(markerCount, lat, lon) {
@@ -60,9 +60,9 @@ emergeApp.controller('MainController',
     [ '$rootScope',
       '$scope',
       'uiGmapGoogleMapApi',
-      'mySocket',
+      // 'mySocket',
       // 'plot',
-    function($rootScope, $scope, uiGmapGoogleMapApi, mySocket) {
+    function($rootScope, $scope, uiGmapGoogleMapApi) {
 
       uiGmapGoogleMapApi.then(function(maps) {
         // $scope.googleVersion = maps.version;
