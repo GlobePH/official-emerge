@@ -41,6 +41,7 @@ func main() {
 	ss := subscribers.New(db)
 	apiMux.Handle("/subscription", chain.Then(subscription.Handler(ss)))
 	n := notify.New()
+	go n.Run()
 	apiMux.Handle("/notify", chain.Then(notify.Handler(n, db)))
 	apiMux.Handle("/channel", chain.Then(channel.Handler(n, db)))
 
