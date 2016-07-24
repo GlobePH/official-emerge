@@ -41,7 +41,7 @@ func main() {
 	ss := subscribers.New(db)
 	apiMux.Handle("/subscription", chain.Then(subscription.Handler(ss)))
 	apiMux.Handle("/notify", chain.Then(notify.Handler(db)))
-	apiMux.Handle("/channel", chain.Then(channel.Handler(db)))
+	apiMux.Handle("/channel", chain.Then(channel.Handler()))
 
 	mux.PathPrefix("/").Handler(chain.Then(http.FileServer(http.Dir("public"))))
 

@@ -1,19 +1,14 @@
 package channel
 
 import (
-	"database/sql"
+	"io"
 	"net/http"
 
-	"github.com/gorilla/handlers"
+	"golang.org/x/net/websocket"
 )
 
-func Handler(db *sql.DB) http.Handler {
-	return handlers.MethodHandler{
-		http.MethodGet: get(db),
-	}
-}
-
-func get(db *sql.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Handler() http.Handler {
+	return websocket.Handler(func(ws *websocket.Conn) {
+		io.Copy(ws, ws)
 	})
 }
