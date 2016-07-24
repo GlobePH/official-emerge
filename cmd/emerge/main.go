@@ -9,6 +9,7 @@ import (
 
 	"github.com/jeepers-creepers/emerge/internal/channel"
 	"github.com/jeepers-creepers/emerge/internal/notify"
+	"github.com/jeepers-creepers/emerge/internal/subscribers"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
 
 	"github.com/gorilla/handlers"
@@ -34,11 +35,12 @@ func main() {
 	}
 	defer db.Close()
 
-	chain := alice.New(debug, logging, recovery)
+	chain := alice.New(debug, logging, recovery, cors)
 	mux := mux.NewRouter().StrictSlash(true)
 
 	apiMux := mux.PathPrefix("/api/").Subrouter()
-	apiMux.Handle("/subscription", chain.Then(subscription.Handler(db)))
+	ss := subscribers.New(db)
+	apiMux.Handle("/subscription", chain.Then(subscription.Handler(ss)))
 	n := notify.New()
 	apiMux.Handle("/notify", chain.Then(notify.Handler(n, db)))
 	apiMux.Handle("/channel", chain.Then(channel.Handler(n, db)))
@@ -59,6 +61,10 @@ func logging(h http.Handler) http.Handler {
 
 func recovery(h http.Handler) http.Handler {
 	return handlers.RecoveryHandler()(h)
+}
+
+func cors(h http.Handler) http.Handler {
+	return handlers.CORS()(h)
 }
 
 func debug(h http.Handler) http.Handler {

@@ -8,6 +8,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jeepers-creepers/emerge/internal/subscribers"
+
 	_ "github.com/lib/pq"
 )
 
@@ -38,7 +40,7 @@ func TestSubscribe(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	h := Handler(db)
+	h := Handler(subscribers.New(db))
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
@@ -53,11 +55,13 @@ func TestNotModified(t *testing.T) {
 	if _, err := db.Exec("TRUNCATE TABLE subscribers CASCADE;"); err != nil {
 		log.Fatal(err)
 	}
-	s := subscriber{
+	s := subscribers.Subscriber{
 		AccesToken:       "1ixLbltjWkzwqLMXT-8UF-UQeKRma0hOOWFA6o91oXw",
 		SubscriberNumber: "9171234567",
 	}
-	if err := subscribe(s, db); err != nil {
+
+	ss := subscribers.New(db)
+	if err := ss.Add(s); err != nil {
 		log.Fatal(err)
 	}
 	url := "?access_token=" + s.AccesToken + "&subscriber_number=" + s.SubscriberNumber
@@ -65,7 +69,8 @@ func TestNotModified(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	h := Handler(db)
+
+	h := Handler(ss)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	if w.Code != http.StatusNotModified {
