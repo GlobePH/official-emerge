@@ -4,7 +4,7 @@ var emergeApp = angular.module('emergeApp', [
     'ngRoute',
     'mobile-angular-ui',
     'uiGmapgoogle-maps',
-    'btford.socket-io'
+    'ngWebSocket'
 ]);
 
 // TODO: Search for $transform
@@ -31,9 +31,15 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 // Socket.IO factory/service
 // emergeApp.factory('mySocket', function(socketFactory) {
 //   return socketFactory();
-//   var domainUrl = 'https://emerge-app.herokuapp.com';
+//   var domainUrl = 'https://localhost:3001';
+//   // var domainUrl = 'https://emerge-app.herokuapp.com';
+//   var listen = 'https://echo.websocket.org';
 //   var listenUrl = '/api/channel'
-//   var myIoSocket = io.connect(domainUrl + listenUrl, {secure: true});
+//   var myIoSocket = io.connect(listen,
+//     {
+//       secure: true,
+// 
+//     });
 // 
 //   var mySocket = socketFactory({
 //     ioSocket: myIoSocket
@@ -42,27 +48,34 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 //   return mySocket;
 // });
 
-// Google plotter factory/service
-// emergeApp.service('plot' ,function(markerCount, lat, lon) {
-//   // $scope.markerCount++;
-//   var marker = {
-//     idKey: markerCount,
-//     coord: {
-//       latitude: lat,
-//       longitude: lon
-//     }
-//   };
-//   return marker;
-// });
+emergeApp.factory('socket', function($websocket) {
+  var url = 'ws://echo.websocket.org';
+  // var url = 'https://emerge-app.herokuapp.com/api/channel';
+  var dataStream = $websocket(url);
+  var collection = [];
+
+  dataStream.onMessage(function(message) {
+    collection.push(JSON.parse(message.data));
+    console.log( 'data received is ' + JSON.stringify(JSON.parse(message.data)));
+  });
+
+  var methods = {
+    collection: collection,
+    get: function() {
+      dataStream.send(JSON.stringify({action: 'get'}));
+    }
+  };
+  return methods;
+});
 
 
 emergeApp.controller('MainController',
     [ '$rootScope',
       '$scope',
       'uiGmapGoogleMapApi',
-      // 'mySocket',
+      'socket',
       // 'plot',
-    function($rootScope, $scope, uiGmapGoogleMapApi) {
+    function($rootScope, $scope, uiGmapGoogleMapApi, socket) {
 
       uiGmapGoogleMapApi.then(function(maps) {
         // $scope.googleVersion = maps.version;
@@ -84,8 +97,12 @@ emergeApp.controller('MainController',
 
 
       /** Socket listeners to other servers **/
-      // mySocket.on('connection', function() {
+      // mySocket.on('connect', function() {
       //   console.log('connected...');
+      // });
+
+      // mySocket.on('disconnect', function() {
+      //   console.log('disconnected...');
       // });
 
       // mySocket.on('message', function(data) {
@@ -95,6 +112,9 @@ emergeApp.controller('MainController',
       //   mySocket.emit('front', { hello: 'front' });
       //   console.log('front is sent to backend...');
       // });
+
+      // socket.send('Data from emerge sent to echo.websocket! Must show in console!');
+      socket.get();
 
 }]);
 
