@@ -47,12 +47,17 @@ const test_json = `{
 }`
 
 func TestNotify(t *testing.T) {
-
 	req, err := http.NewRequest(http.MethodPost, "", strings.NewReader(test_json))
 	if err != nil {
 		log.Fatal(err)
 	}
-	h := Handler(db)
+	if _, err := db.Exec("TRUNCATE TABLE subscribers CASCADE;"); err != nil {
+		log.Fatal(err)
+	}
+	if _, err := db.Exec("INSERT INTO subscribers (subscriber_number, access_token) VALUES ('9171234567', '9171234567');"); err != nil {
+		log.Fatal(err)
+	}
+	h := Handler(New(), db)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
