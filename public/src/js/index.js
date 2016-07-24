@@ -50,7 +50,7 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 
 emergeApp.factory('socket', function($websocket, $window) {
   // var url = 'ws://echo.websocket.org';
-  var url = 'ws://emerge-app.herokuapp.com/api/channel';
+  var url = 'wss://emerge-app.herokuapp.com/api/channel';
   var dataStream = $websocket(url);
   var collection = [];
 
