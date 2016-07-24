@@ -31,7 +31,7 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 // Socket.IO factory/service
 emergeApp.factory('mySocket', function(socketFactory) {
   // var listenUrl = 'https://emerge-app.herokuapp.com/#/api/channel'
-  var domainUrl = 'http://emerge-app.herokuapp.com';
+  var domainUrl = 'https://emerge-app.herokuapp.com';
   var listenUrl = '/api/channel'
   var myIoSocket = io.connect(domainUrl + listenUrl);
   // io.configure(function() {
