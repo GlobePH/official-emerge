@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"os"
 
 	//"github.com/jeepers-creepers/emerge/internal/channel"
@@ -35,7 +34,7 @@ func main() {
 	}
 	defer db.Close()
 
-	chain := alice.New(debug, logging, recovery, cors)
+	chain := alice.New(logging, recovery, cors)
 	mux := mux.NewRouter().StrictSlash(true)
 
 	apiMux := mux.PathPrefix("/api/").Subrouter()
@@ -65,15 +64,4 @@ func recovery(h http.Handler) http.Handler {
 
 func cors(h http.Handler) http.Handler {
 	return handlers.CORS()(h)
-}
-
-func debug(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		dump, err := httputil.DumpRequest(r, true)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("%q", dump)
-		h.ServeHTTP(w, r)
-	})
 }
