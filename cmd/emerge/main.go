@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"os"
 
+	"github.com/jeepers-creepers/emerge/internal/channel"
 	"github.com/jeepers-creepers/emerge/internal/notify"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
 
@@ -39,6 +40,7 @@ func main() {
 	apiMux := mux.PathPrefix("/api/").Subrouter()
 	apiMux.Handle("/subscription", chain.Then(subscription.Handler(db)))
 	apiMux.Handle("/notify", chain.Then(notify.Handler(db)))
+	apiMux.Handle("/channel", chain.Then(channel.Handler(db)))
 
 	mux.PathPrefix("/").Handler(chain.Then(http.FileServer(http.Dir("public"))))
 
