@@ -21,6 +21,7 @@
     "angular-google-maps": "^2.2.3",
     "socket.io": "^1.4.8",
     "socket.io-client": "^1.4.8",
-    "angular-socket-io": "^0.7.0"
+    "angular-socket-io": "^0.7.0",
+    "angular-websocket": "^2.0.0"
   }
 }
