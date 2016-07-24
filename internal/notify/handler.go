@@ -3,25 +3,27 @@ package notify
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/handlers"
 )
 
-func Handler(db *sql.DB) http.Handler {
+type sms struct {
+	MessageId        string
+	SubscriberNumber string
+	Message          string
+	ReceivedAt       time.Time
+}
+
+func Handler(n *Notifier, db *sql.DB) http.Handler {
 	return handlers.MethodHandler{
-		http.MethodGet:  get(db),
-		http.MethodPost: post(db),
+		http.MethodPost: post(n, db),
 	}
 }
 
-func get(db *sql.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	})
-}
-
-func post(db *sql.DB) http.Handler {
+func post(n *Notifier, db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -36,6 +38,10 @@ func post(db *sql.DB) http.Handler {
 			}
 		}
 
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			panic(err)
+		}
+
 		const layout string = "Mon Jan 2 2006 15:04:05 MST+0000 (UTC)"
 		for _, msg := range data.InboundSMSMessageList.InboundSMSMessage {
 			receivedAt, err := time.Parse(layout, msg.DateTime)
@@ -43,18 +49,28 @@ func post(db *sql.DB) http.Handler {
 				panic(err)
 			}
 
-			if err := saveSMSMessage(msg.MessageId, msg.SenderAddress[:10], msg.Message, receivedAt, db); err != nil {
+			smsMsg := sms{
+				MessageId:        msg.MessageId,
+				SubscriberNumber: msg.SenderAddress[len(msg.SenderAddress)-10:],
+				Message:          msg.Message,
+				ReceivedAt:       receivedAt,
+			}
+
+			log.Print(smsMsg)
+			if err := saveSMS(smsMsg, db); err != nil {
 				panic(err)
 			}
-		}
 
-		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-			panic(err)
+			b, err := json.Marshal(smsMsg)
+			if err != nil {
+				panic(err)
+			}
+			n.Publish(b)
 		}
 	})
 }
 
-func saveSMSMessage(messageId, subscriberNumber, message string, receivedAt time.Time, db *sql.DB) (err error) {
+func saveSMS(msg sms, db *sql.DB) (err error) {
 	cmd := "INSERT INTO subscriber_sms_inbox (message_id, subscriber_number, message, received_at) VALUES ($1, $2, $3, $4);"
 
 	tx, err := db.Begin()
@@ -68,7 +84,7 @@ func saveSMSMessage(messageId, subscriberNumber, message string, receivedAt time
 		return
 	}
 
-	if _, err = stmt.Exec(messageId, subscriberNumber, message, receivedAt); err != nil {
+	if _, err = stmt.Exec(msg.MessageId, msg.SubscriberNumber, msg.Message, msg.ReceivedAt); err != nil {
 		return
 	}
 
@@ -81,5 +97,4 @@ func saveSMSMessage(messageId, subscriberNumber, message string, receivedAt time
 	}
 
 	return
-	return nil
 }
