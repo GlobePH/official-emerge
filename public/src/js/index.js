@@ -30,19 +30,16 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 
 // Socket.IO factory/service
 emergeApp.factory('mySocket', function(socketFactory) {
-  // var listenUrl = 'https://emerge-app.herokuapp.com/#/api/channel'
-  var domainUrl = 'https://emerge-app.herokuapp.com';
-  var listenUrl = '/api/channel'
-  var myIoSocket = io.connect(domainUrl + listenUrl, {secure: true});
-  // io.configure(function() {
-  //   io.set('transports', ['xhr-polling']);
-  //   io.set('polling duration', 10);
-  // });
-  var mySocket = socketFactory({
-    ioSocket: myIoSocket
-  });
+  return socketFactory();
+  // var domainUrl = 'https://emerge-app.herokuapp.com';
+  // var listenUrl = '/api/channel'
+  // var myIoSocket = io.connect(domainUrl + listenUrl, {secure: true});
 
-  return mySocket;
+  // var mySocket = socketFactory({
+  //   ioSocket: myIoSocket
+  // });
+
+  // return mySocket;
 });
 
 // Google plotter factory/service
@@ -87,17 +84,17 @@ emergeApp.controller('MainController',
 
 
       /** Socket listeners to other servers **/
-      mySocket.on('connection', function() {
-        console.log('connected...');
-      });
+      // mySocket.on('connection', function() {
+      //   console.log('connected...');
+      // });
 
-      mySocket.on('message', function(data) {
-        console.log('message received');
-        console.log('data is ' + data.hello);
+      // mySocket.on('message', function(data) {
+      //   console.log('message received');
+      //   console.log('data is ' + data.hello);
 
-        mySocket.emit('front', { hello: 'front' });
-        console.log('front is sent to backend...');
-      });
+      //   mySocket.emit('front', { hello: 'front' });
+      //   console.log('front is sent to backend...');
+      // });
 
 }]);
 
