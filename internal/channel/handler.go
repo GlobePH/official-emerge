@@ -14,6 +14,7 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 func Handler(n *notify.Notifier, db *sql.DB) http.Handler {
