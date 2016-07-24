@@ -2,7 +2,6 @@ package channel
 
 import (
 	"database/sql"
-	"io"
 	"net/http"
 
 	"github.com/jeepers-creepers/emerge/internal/notify"
@@ -30,25 +29,6 @@ func get(n *notify.Notifier, db *sql.DB) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-
-		id := n.Subscribe(ws)
-
-		for {
-			// wait until closed(?)
-			_, _, err := ws.ReadMessage()
-			if err != nil {
-				switch err {
-				case io.EOF:
-					//Closed
-					break
-				default:
-					break
-				}
-			}
-		}
-
-		n.Unsubscribe(id)
-
-		ws.WriteMessage(websocket.CloseMessage, []byte{})
+		notify.Listen(n, ws)
 	})
 }

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	//"github.com/jeepers-creepers/emerge/internal/channel"
+	"github.com/jeepers-creepers/emerge/internal/channel"
 	"github.com/jeepers-creepers/emerge/internal/notify"
 	"github.com/jeepers-creepers/emerge/internal/subscribers"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
@@ -42,7 +42,7 @@ func main() {
 	apiMux.Handle("/subscription", chain.Then(subscription.Handler(ss)))
 	n := notify.New()
 	apiMux.Handle("/notify", chain.Then(notify.Handler(n, db)))
-	//apiMux.Handle("/channel", chain.Then(channel.Handler(n, db)))
+	apiMux.Handle("/channel", chain.Then(channel.Handler(n, db)))
 
 	mux.PathPrefix("/").Handler(chain.Then(http.FileServer(http.Dir("public"))))
 
