@@ -17,13 +17,13 @@ type sms struct {
 	ReceivedAt       time.Time
 }
 
-func Handler(n *Notifier, db *sql.DB) http.Handler {
+func Handler(db *sql.DB) http.Handler {
 	return handlers.MethodHandler{
-		http.MethodPost: post(n, db),
+		http.MethodPost: post(db),
 	}
 }
 
-func post(n *Notifier, db *sql.DB) http.Handler {
+func post(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -60,12 +60,6 @@ func post(n *Notifier, db *sql.DB) http.Handler {
 			if err := saveSMS(smsMsg, db); err != nil {
 				panic(err)
 			}
-
-			b, err := json.Marshal(smsMsg)
-			if err != nil {
-				panic(err)
-			}
-			n.Publish(b)
 		}
 	})
 }

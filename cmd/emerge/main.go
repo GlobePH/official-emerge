@@ -40,10 +40,8 @@ func main() {
 	apiMux := mux.PathPrefix("/api/").Subrouter()
 	ss := subscribers.New(db)
 	apiMux.Handle("/subscription", chain.Then(subscription.Handler(ss)))
-	n := notify.New()
-	go n.Run()
-	apiMux.Handle("/notify", chain.Then(notify.Handler(n, db)))
-	apiMux.Handle("/channel", chain.Then(channel.Handler(n, db)))
+	apiMux.Handle("/notify", chain.Then(notify.Handler(db)))
+	apiMux.Handle("/channel", chain.Then(channel.Handler(db)))
 
 	mux.PathPrefix("/").Handler(chain.Then(http.FileServer(http.Dir("public"))))
 

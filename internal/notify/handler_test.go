@@ -57,7 +57,7 @@ func TestNotify(t *testing.T) {
 	if _, err := db.Exec("INSERT INTO subscribers (subscriber_number, access_token) VALUES ('9171234567', '9171234567');"); err != nil {
 		log.Fatal(err)
 	}
-	h := Handler(New(), db)
+	h := Handler(db)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 
