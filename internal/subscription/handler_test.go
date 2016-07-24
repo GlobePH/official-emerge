@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestSubscribe(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE TABLE subscribers"); err != nil {
+	if _, err := db.Exec("TRUNCATE TABLE subscribers CASCADE;"); err != nil {
 		log.Fatal(err)
 	}
 	url := `?access_token=1ixLbltjWkzwqLMXT-8UF-UQeKRma0hOOWFA6o91oXw&subscriber_number=9171234567`
@@ -50,7 +50,7 @@ func TestSubscribe(t *testing.T) {
 }
 
 func TestNotModified(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE TABLE subscribers"); err != nil {
+	if _, err := db.Exec("TRUNCATE TABLE subscribers CASCADE;"); err != nil {
 		log.Fatal(err)
 	}
 	s := subscriber{
