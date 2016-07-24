@@ -21,10 +21,10 @@ gulp.task('clean', function() {
 });
 
 gulp.task('js', function() {
-  var jsFiles = ['src/js/*.js'];
+  var jsFiles = ['src/js/*.js', 'bower_components/socket.io-client/socket.io.js'];
    gulp.src(plugins.mainBowerFiles().concat(jsFiles)
     .concat("http://maps.googleapis.com/maps/api/js?sensor=false&language=en")) 
-    .pipe(plugins.filter('**/*.js'))
+    .pipe(plugins.filter('**/*.js', '**/*.io.js'))
     .pipe(plugins.concat('main.min.js'))
     .pipe(gulp.dest('./js'));
 });

@@ -33,7 +33,7 @@ emergeApp.factory('mySocket', function(socketFactory) {
   // var listenUrl = 'https://emerge-app.herokuapp.com/#/api/channel'
   var domainUrl = 'https://emerge-app.herokuapp.com';
   var listenUrl = '/api/channel'
-  var myIoSocket = io.connect(domainUrl + listenUrl);
+  var myIoSocket = io.connect(domainUrl + listenUrl, {secure: true});
   // io.configure(function() {
   //   io.set('transports', ['xhr-polling']);
   //   io.set('polling duration', 10);
