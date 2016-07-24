@@ -10,20 +10,6 @@ var plugins = require('gulp-load-plugins')({
 var destination = 'js';
 
 
-// JS task
-// gulp.task('js', function() {
-//   var jsFiles = ['js/*'];
-// 
-//   console.log(gulp.src(plugins.mainBowerFiles()).pipe(plugins.filter('*.js')));
-//   gulp.src(plugins.mainBowerFiles())
-//     .pipe(plugins.filter('*.js'))
-//     .pipe(plugins.concat('main.js'))
-//     .pipe(gulp.dest('./js'))
-//     .pipe(plugins.rename('main.min.js'))
-//     .pipe(plugins.uglify())
-//     .pipe(gulp.dest("./js"));
-// });
-
 gulp.task('default', ['clean', 'js', 'css']);
 
 gulp.task('clean', function() {
