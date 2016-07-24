@@ -29,21 +29,18 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 }]);
 
 // Socket.IO factory/service
-emergeApp.factory('mySocket', function(socketFactory) {
-  // var listenUrl = 'https://emerge-app.herokuapp.com/#/api/channel'
-  var domainUrl = 'http://emerge-app.herokuapp.com';
-  var listenUrl = '/api/channel'
-  var myIoSocket = io.connect(domainUrl + listenUrl);
-  // io.configure(function() {
-  //   io.set('transports', ['xhr-polling']);
-  //   io.set('polling duration', 10);
-  // });
-  var mySocket = socketFactory({
-    ioSocket: myIoSocket
-  });
-
-  return mySocket;
-});
+// emergeApp.factory('mySocket', function(socketFactory) {
+//   return socketFactory();
+//   var domainUrl = 'https://emerge-app.herokuapp.com';
+//   var listenUrl = '/api/channel'
+//   var myIoSocket = io.connect(domainUrl + listenUrl, {secure: true});
+// 
+//   var mySocket = socketFactory({
+//     ioSocket: myIoSocket
+//   });
+// 
+//   return mySocket;
+// });
 
 // Google plotter factory/service
 // emergeApp.service('plot' ,function(markerCount, lat, lon) {
@@ -63,9 +60,9 @@ emergeApp.controller('MainController',
     [ '$rootScope',
       '$scope',
       'uiGmapGoogleMapApi',
-      'mySocket',
+      // 'mySocket',
       // 'plot',
-    function($rootScope, $scope, uiGmapGoogleMapApi, mySocket) {
+    function($rootScope, $scope, uiGmapGoogleMapApi) {
 
       uiGmapGoogleMapApi.then(function(maps) {
         // $scope.googleVersion = maps.version;
@@ -87,17 +84,17 @@ emergeApp.controller('MainController',
 
 
       /** Socket listeners to other servers **/
-      mySocket.on('connection', function() {
-        console.log('connected...');
-      });
+      // mySocket.on('connection', function() {
+      //   console.log('connected...');
+      // });
 
-      mySocket.on('message', function(data) {
-        console.log('message received');
-        console.log('data is ' + data.hello);
+      // mySocket.on('message', function(data) {
+      //   console.log('message received');
+      //   console.log('data is ' + data.hello);
 
-        mySocket.emit('front', { hello: 'front' });
-        console.log('front is sent to backend...');
-      });
+      //   mySocket.emit('front', { hello: 'front' });
+      //   console.log('front is sent to backend...');
+      // });
 
 }]);
 
