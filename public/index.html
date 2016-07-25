@@ -16,6 +16,8 @@
     <script src="bower_components/angular-socket-io/socket.js"></script>
     -->
     <script src="js/main.min.js"></script>
+    <script src="sidebar/emerge.sidebar.module.js"></script>
+    <script src="sidebar/emerge.sidebar.component.js"></script>
 
     <title>Emerge</title>
 
@@ -24,8 +26,8 @@
 	<body ng-app="emergeApp" ng-controller="MainController">
 
     <!-- Initialize sidebar, left and right, with templated html -->
-    <div ng-include="'sidebar.html'" ui-track-as-search-param="true"
-      class="sidebar sidebar-left"></div>
+    <!-- Load sidebar component -->
+    <emerge-sidebar></emerge-sidebar>
 
     <div class="app">
 

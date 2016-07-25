@@ -4,7 +4,8 @@ var emergeApp = angular.module('emergeApp', [
     'ngRoute',
     'mobile-angular-ui',
     'uiGmapgoogle-maps',
-    'ngWebSocket'
+    'ngWebSocket',
+    'emergeSidebar'
 ]);
 
 // TODO: Search for $transform
@@ -28,26 +29,7 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
 
 }]);
 
-// Socket.IO factory/service
-// emergeApp.factory('mySocket', function(socketFactory) {
-//   return socketFactory();
-//   var domainUrl = 'https://localhost:3001';
-//   // var domainUrl = 'https://emerge-app.herokuapp.com';
-//   var listen = 'https://echo.websocket.org';
-//   var listenUrl = '/api/channel'
-//   var myIoSocket = io.connect(listen,
-//     {
-//       secure: true,
-// 
-//     });
-// 
-//   var mySocket = socketFactory({
-//     ioSocket: myIoSocket
-//   });
-// 
-//   return mySocket;
-// });
-
+// Websocket provider
 emergeApp.factory('socket', function($websocket, $window) {
   // var url = 'ws://echo.websocket.org';
   var url = 'wss://emerge-app.herokuapp.com/api/channel';
@@ -66,6 +48,10 @@ emergeApp.factory('socket', function($websocket, $window) {
     collection: collection,
     get: function() {
       dataStream.send(JSON.stringify({action: 'get'}));
+    },
+    // Send a sync request to the server
+    sync: function() {
+      ;
     }
   };
   return methods;
@@ -85,11 +71,12 @@ emergeApp.controller('MainController',
         // maps.visualRefresh = true;
       });
 
-      /** Markers **/
+      /** GMaps Markers TODO! make markers work **/
       // $scope.markers = [];
       // $scope.markerCount = 0;
       // $scope.markers.push(plot(14, 122));
       
+      // Google maps demonstration
       $scope.map = {
         center: {
           latitude: 13,
@@ -98,25 +85,7 @@ emergeApp.controller('MainController',
         zoom: 7
       };
 
-
-      /** Socket listeners to other servers **/
-      // mySocket.on('connect', function() {
-      //   console.log('connected...');
-      // });
-
-      // mySocket.on('disconnect', function() {
-      //   console.log('disconnected...');
-      // });
-
-      // mySocket.on('message', function(data) {
-      //   console.log('message received');
-      //   console.log('data is ' + data.hello);
-
-      //   mySocket.emit('front', { hello: 'front' });
-      //   console.log('front is sent to backend...');
-      // });
-
-      // socket.send('Data from emerge sent to echo.websocket! Must show in console!');
+      // Web socket demonstration
       socket.get();
 
 }]);
