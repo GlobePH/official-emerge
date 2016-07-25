@@ -6,4 +6,4 @@ angular.module('emergeSidebar')
   controller: [function sidebarController() {
     /** Controller function for sidebar **/
   }]
-})
+});

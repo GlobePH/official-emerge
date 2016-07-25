@@ -3,9 +3,9 @@
 var emergeApp = angular.module('emergeApp', [
     'ngRoute',
     'mobile-angular-ui',
-    'uiGmapgoogle-maps',
     'ngWebSocket',
-    'emergeSidebar'
+    'emergeSidebar',
+    'emergeHome'
 ]);
 
 // TODO: Search for $transform
@@ -13,8 +13,8 @@ var emergeApp = angular.module('emergeApp', [
 //   window.$transform = $tranform;
 // });
 
-emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
-    function($routeProvider, uiGmapGoogleMapApiProvider) {
+emergeApp.config(['$routeProvider',
+    function($routeProvider) {
 
   $routeProvider.when('/', {
     templateUrl:      'home.html',
@@ -22,16 +22,15 @@ emergeApp.config(['$routeProvider', 'uiGmapGoogleMapApiProvider',
   });
 
   /** Google Maps initialization **/
-  uiGmapGoogleMapApiProvider.configure({
-    // v: '3.20',
-    libraries: 'weather, geometry, visualization'
-  });
+  // uiGmapGoogleMapApiProvider.configure({
+  //   // v: '3.20',
+  //   libraries: 'weather, geometry, visualization'
+  // });
 
 }]);
 
 // Websocket provider
 emergeApp.factory('socket', function($websocket, $window) {
-  // var url = 'ws://echo.websocket.org';
   var url = 'wss://emerge-app.herokuapp.com/api/channel';
   var dataStream = $websocket(url);
   var collection = [];
@@ -61,29 +60,8 @@ emergeApp.factory('socket', function($websocket, $window) {
 emergeApp.controller('MainController',
     [ '$rootScope',
       '$scope',
-      'uiGmapGoogleMapApi',
       'socket',
-      // 'plot',
-    function($rootScope, $scope, uiGmapGoogleMapApi, socket) {
-
-      uiGmapGoogleMapApi.then(function(maps) {
-        // $scope.googleVersion = maps.version;
-        // maps.visualRefresh = true;
-      });
-
-      /** GMaps Markers TODO! make markers work **/
-      // $scope.markers = [];
-      // $scope.markerCount = 0;
-      // $scope.markers.push(plot(14, 122));
-      
-      // Google maps demonstration
-      $scope.map = {
-        center: {
-          latitude: 13,
-          longitude: 122
-        },
-        zoom: 7
-      };
+    function($rootScope, $scope, socket) {
 
       // Web socket demonstration
       socket.get();
