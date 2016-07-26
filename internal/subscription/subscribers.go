@@ -1,28 +1,20 @@
-package subscribers
+package subscription
 
 import (
 	"database/sql"
-	"time"
 )
 
-type Subscriber struct {
-	AccesToken        string
-	SubscriberNumber  string
-	SubscriptionStart *time.Time
-	SubscriptionEnd   *time.Time
-}
-
-type Subscribers struct {
+type subscribers struct {
 	db *sql.DB
 }
 
-func New(db *sql.DB) *Subscribers {
-	return &Subscribers{
+func NewSubscribers(db *sql.DB) *subscribers {
+	return &subscribers{
 		db: db,
 	}
 }
 
-func (ss *Subscribers) Add(s Subscriber) (err error) {
+func (ss *subscribers) Add(s Subscriber) (err error) {
 	cmd := "INSERT INTO subscribers (subscriber_number, access_token) VALUES ($1, $2);"
 
 	tx, err := ss.db.Begin()
@@ -36,7 +28,7 @@ func (ss *Subscribers) Add(s Subscriber) (err error) {
 		return
 	}
 
-	if _, err = stmt.Exec(s.SubscriberNumber, s.AccesToken); err != nil {
+	if _, err = stmt.Exec(s.SubscriberNumber, s.AccessToken); err != nil {
 		return
 	}
 
@@ -51,7 +43,7 @@ func (ss *Subscribers) Add(s Subscriber) (err error) {
 	return
 }
 
-func (ss *Subscribers) Get(subscriberNumber string) (s *Subscriber, err error) {
+func (ss *subscribers) Get(subscriberNumber string) (s *Subscriber, err error) {
 	cmd := "SELECT subscriber_number, access_token, subscription_start, subscription_end FROM subscribers WHERE subscriber_number = $1;"
 	stmt, err := ss.db.Prepare(cmd)
 	if err != nil {
@@ -60,7 +52,7 @@ func (ss *Subscribers) Get(subscriberNumber string) (s *Subscriber, err error) {
 	defer stmt.Close()
 
 	s = &Subscriber{}
-	if err = stmt.QueryRow(subscriberNumber).Scan(&s.SubscriberNumber, &s.AccesToken, &s.SubscriptionStart, &s.SubscriptionEnd); err != nil && err == sql.ErrNoRows {
+	if err = stmt.QueryRow(subscriberNumber).Scan(&s.SubscriberNumber, &s.AccessToken, &s.SubscriptionStart, &s.SubscriptionEnd); err != nil && err == sql.ErrNoRows {
 		return nil, nil
 	}
 	return

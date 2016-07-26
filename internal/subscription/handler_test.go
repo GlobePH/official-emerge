@@ -1,79 +1,125 @@
 package subscription
 
 import (
-	"database/sql"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
-	"github.com/jeepers-creepers/emerge/internal/subscribers"
-
-	_ "github.com/lib/pq"
+	"github.com/bgentry/que-go"
+	"github.com/jackc/pgx"
 )
 
-var db *sql.DB
+var handler http.Handler
 
 func TestMain(m *testing.M) {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("$DATABASE_URL must be set")
+		panic("$DATABASE_URL must be set")
 	}
 
-	var err error
-	db, err = sql.Open("postgres", dbURL)
+	cfg, err := pgx.ParseURI(dbURL)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	defer db.Close()
+
+	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
+		ConnConfig:   cfg,
+		AfterConnect: que.PrepareStatements,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	handler = New(que.NewClient(pool))
 
 	os.Exit(m.Run())
 }
 
 func TestSubscribe(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE TABLE subscribers CASCADE;"); err != nil {
-		log.Fatal(err)
-	}
 	url := `?access_token=1ixLbltjWkzwqLMXT-8UF-UQeKRma0hOOWFA6o91oXw&subscriber_number=9171234567`
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	r, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
-	h := Handler(subscribers.New(db))
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, req)
 
-	expected := "9171234567 is subscribed.\n"
-	actual := w.Body.String()
-	if w.Code != http.StatusOK || expected != actual {
-		t.Errorf("Subscription fail.\nCode: %d\t Body: %s\n", w.Code, actual)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusAccepted {
+		t.Errorf("Code: %d, Body:%s", w.Code, w.Body.String())
 	}
 }
 
-func TestNotModified(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE TABLE subscribers CASCADE;"); err != nil {
-		log.Fatal(err)
-	}
-	s := subscribers.Subscriber{
-		AccesToken:       "1ixLbltjWkzwqLMXT-8UF-UQeKRma0hOOWFA6o91oXw",
-		SubscriberNumber: "9171234567",
-	}
-
-	ss := subscribers.New(db)
-	if err := ss.Add(s); err != nil {
-		log.Fatal(err)
-	}
-	url := "?access_token=" + s.AccesToken + "&subscriber_number=" + s.SubscriberNumber
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+func TestMissingSubscriberNumber(t *testing.T) {
+	url := `?access_token=1ixLbltjWkzwqLMXT-8UF-UQeKRma0hOOWFA6o91oXw`
+	r, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
-	h := Handler(ss)
 	w := httptest.NewRecorder()
-	h.ServeHTTP(w, req)
-	if w.Code != http.StatusNotModified {
-		t.Errorf("Did not respond with HTTP 304.\nCode: %d\t Body: %s\n", w.Code, w.Body.String())
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fail()
+	}
+}
+
+func TestMissingAccesToken(t *testing.T) {
+	url := `?subscriber_number=9171234567`
+	r, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fail()
+	}
+}
+
+func TestNoQuery(t *testing.T) {
+	r, err := http.NewRequest(http.MethodGet, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fail()
+	}
+}
+
+func TestPutNotAllowed(t *testing.T) {
+	r, err := http.NewRequest(http.MethodPut, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Fail()
+	}
+}
+
+func TestDeleteNotAllowed(t *testing.T) {
+	r, err := http.NewRequest(http.MethodDelete, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Fail()
 	}
 }

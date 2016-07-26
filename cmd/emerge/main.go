@@ -1,20 +1,19 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/jeepers-creepers/emerge/internal/channel"
-	"github.com/jeepers-creepers/emerge/internal/notify"
-	"github.com/jeepers-creepers/emerge/internal/subscribers"
+	//"github.com/jeepers-creepers/emerge/internal/notify"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
 
+	"github.com/bgentry/que-go"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx"
 	"github.com/justinas/alice"
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -28,19 +27,27 @@ func main() {
 		log.Fatal("$DATABASE_URL must be set")
 	}
 
-	db, err := sql.Open("postgres", dbURL)
+	cfg, err := pgx.ParseURI(dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+
+	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
+		ConnConfig:   cfg,
+		AfterConnect: que.PrepareStatements,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer pool.Close()
 
 	chain := alice.New(logging, recovery, cors)
 	mux := mux.NewRouter().StrictSlash(true)
 
 	apiMux := mux.PathPrefix("/api/").Subrouter()
-	ss := subscribers.New(db)
-	apiMux.Handle("/subscription", chain.Then(subscription.Handler(ss)))
-	apiMux.Handle("/notify", chain.Then(notify.Handler(db)))
+	sub := subscription.New(que.NewClient(pool))
+	apiMux.Handle("/subscription", chain.Then(sub))
+	//apiMux.Handle("/notify", chain.Then(notify.Handler(db)))
 	apiMux.Handle("/channel", chain.Then(channel.Handler()))
 
 	mux.PathPrefix("/").Handler(chain.Then(http.FileServer(http.Dir("public"))))
@@ -50,6 +57,7 @@ func main() {
 		Handler: mux,
 	}
 
+	log.Printf("%s started", os.Args[0])
 	log.Fatal(s.ListenAndServe())
 }
 
