@@ -7,6 +7,10 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/bgentry/que-go",
+			"Rev": "e2fa4b8f0b5ef9ca86ab2d59f0ace88b96ac1a50"
+		},
+		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
 		},
@@ -19,6 +23,11 @@
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.1",
 			"Rev": "0eeaf8392f5b04950925b8a69fe70f110fa7cbfc"
+		},
+		{
+			"ImportPath": "github.com/jackc/pgx",
+			"Comment": "v2.8.1-53-g558d555",
+			"Rev": "558d5550cf5c08e7192eb2eb8635f21f4b700ff5"
 		},
 		{
 			"ImportPath": "github.com/justinas/alice",
