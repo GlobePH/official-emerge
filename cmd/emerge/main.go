@@ -34,7 +34,7 @@ func main() {
 
 	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
 		ConnConfig:   cfg,
-		AfterConnect: que.PrepareStatements,
+		AfterConnect: afterConnect,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -45,7 +45,7 @@ func main() {
 	mux := mux.NewRouter().StrictSlash(true)
 
 	apiMux := mux.PathPrefix("/api/").Subrouter()
-	sub := subscription.New(que.NewClient(pool))
+	sub := subscription.New(pool)
 	apiMux.Handle("/subscription", chain.Then(sub))
 	//apiMux.Handle("/notify", chain.Then(notify.Handler(db)))
 	apiMux.Handle("/channel", chain.Then(channel.Handler()))
@@ -59,6 +59,10 @@ func main() {
 
 	log.Printf("%s started", os.Args[0])
 	log.Fatal(s.ListenAndServe())
+}
+
+func afterConnect(conn *pgx.Conn) error {
+	return que.PrepareStatements(conn)
 }
 
 func logging(h http.Handler) http.Handler {

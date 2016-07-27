@@ -13,10 +13,6 @@ import (
 	"github.com/jackc/pgx"
 )
 
-const (
-	subscribeSQL = `INSERT INTO subscribers (subscriber_number, access_token) VALUES ($1, $2);`
-)
-
 var (
 	pool *pgx.ConnPool
 )
@@ -58,22 +54,28 @@ func main() {
 }
 
 func subscribe(pool *pgx.ConnPool) que.WorkFunc {
+	ss := subscription.NewSubscribers(pool)
 	return func(job *que.Job) error {
-		var sub subscription.Subscriber
-		if err := json.Unmarshal(job.Args, &sub); err != nil {
+		var s subscription.Subscriber
+		if err := json.Unmarshal(job.Args, &s); err != nil {
 			return err
 		}
-		if _, err := pool.Exec(subscription.Subscribe, sub.SubscriberNumber, sub.AccessToken); err != nil {
+		if err := ss.Add(s); err != nil {
 			return err
 		}
-		log.Printf("%s subscribed", sub.SubscriberNumber)
 		return nil
 	}
 }
 
-func afterConnect(conn *pgx.Conn) error {
-	if _, err := conn.Prepare(subscription.Subscribe, subscribeSQL); err != nil {
-		return err
+func afterConnect(conn *pgx.Conn) (err error) {
+	var xs = []func(*pgx.Conn) error{
+		que.PrepareStatements,
+		subscription.PrepareStatements,
 	}
-	return que.PrepareStatements(conn)
+	for _, x := range xs {
+		if err = x(conn); err != nil {
+			return err
+		}
+	}
+	return
 }

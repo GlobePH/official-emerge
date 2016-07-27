@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bgentry/que-go"
 	"github.com/jackc/pgx"
 )
 
@@ -25,14 +24,17 @@ func TestMain(m *testing.M) {
 
 	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
 		ConnConfig:   cfg,
-		AfterConnect: que.PrepareStatements,
+		AfterConnect: PrepareStatements,
 	})
-
 	if err != nil {
 		panic(err)
 	}
 
-	handler = New(que.NewClient(pool))
+	_, err = pool.Exec("TRUNCATE table subscribers CASCADE;")
+	if err != nil {
+		panic(err)
+	}
+	handler = New(pool)
 
 	os.Exit(m.Run())
 }

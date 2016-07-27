@@ -1,11 +1,10 @@
 package subscription
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"github.com/bgentry/que-go"
 	"github.com/gorilla/handlers"
+	"github.com/jackc/pgx"
 )
 
 var (
@@ -14,12 +13,12 @@ var (
 )
 
 type subscription struct {
-	q *que.Client
+	ss *subscribers
 }
 
-func New(c *que.Client) *subscription {
+func New(pool *pgx.ConnPool) *subscription {
 	return &subscription{
-		q: c,
+		ss: NewSubscribers(pool),
 	}
 }
 
@@ -31,6 +30,7 @@ func (s *subscription) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}.ServeHTTP(w, r)
 }
 
+// I don't know why this is a GET instead of a POST
 func (s *subscription) get(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	subscriber := Subscriber{
@@ -43,17 +43,7 @@ func (s *subscription) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args, err := json.Marshal(subscriber)
-	if err != nil {
-		panic(err)
-	}
-
-	err = s.q.Enqueue(&que.Job{
-		Type: Subscribe,
-		Args: args,
-	})
-
-	if err != nil {
+	if err := s.ss.Add(subscriber); err != nil {
 		panic(err)
 	}
 
