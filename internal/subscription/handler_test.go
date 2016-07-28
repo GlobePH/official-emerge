@@ -29,6 +29,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
+	defer pool.Close()
 
 	_, err = pool.Exec("TRUNCATE table subscribers CASCADE;")
 	if err != nil {

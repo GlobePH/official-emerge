@@ -1,31 +1,48 @@
 package notify
 
 import (
-	"database/sql"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 
-	_ "github.com/lib/pq"
+	"github.com/jeepers-creepers/emerge/internal/sms"
+
+	"github.com/jackc/pgx"
 )
 
-var db *sql.DB
+var handler http.Handler
 
 func TestMain(m *testing.M) {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("$DATABASE_URL must be set")
+		panic("$DATABASE_URL must be set")
 	}
 
-	var err error
-	db, err = sql.Open("postgres", dbURL)
+	cfg, err := pgx.ParseURI(dbURL)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	defer db.Close()
+
+	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
+		ConnConfig:   cfg,
+		AfterConnect: sms.PrepareStatements,
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer pool.Close()
+
+	if _, err = pool.Exec("TRUNCATE table subscribers CASCADE;"); err != nil {
+		panic(err)
+	}
+
+	if _, err := pool.Exec("INSERT INTO subscribers (subscriber_number, access_token) VALUES ('9171234567', '9171234567');"); err != nil {
+		panic(err)
+	}
+
+	handler = New(pool)
 
 	os.Exit(m.Run())
 }
@@ -49,19 +66,12 @@ const test_json = `{
 func TestNotify(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, "", strings.NewReader(test_json))
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	if _, err := db.Exec("TRUNCATE TABLE subscribers CASCADE;"); err != nil {
-		log.Fatal(err)
-	}
-	if _, err := db.Exec("INSERT INTO subscribers (subscriber_number, access_token) VALUES ('9171234567', '9171234567');"); err != nil {
-		log.Fatal(err)
-	}
-	h := Handler(db)
 	w := httptest.NewRecorder()
-	h.ServeHTTP(w, req)
+	handler.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Notify fail.\nCode: %d\tBody: %s\n", w.Code, w.Body.String())
+	if w.Code != http.StatusAccepted {
+		t.Fail()
 	}
 }
