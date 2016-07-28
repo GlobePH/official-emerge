@@ -86,6 +86,7 @@ func inbox(pool *pgx.ConnPool) que.WorkFunc {
 func afterConnect(conn *pgx.Conn) (err error) {
 	var xs = []func(*pgx.Conn) error{
 		que.PrepareStatements,
+		sms.PrepareStatements,
 		subscription.PrepareStatements,
 	}
 	for _, x := range xs {
