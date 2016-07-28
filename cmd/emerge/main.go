@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/jeepers-creepers/emerge/internal/channel"
-	//"github.com/jeepers-creepers/emerge/internal/notify"
+	"github.com/jeepers-creepers/emerge/internal/notify"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
 
 	"github.com/bgentry/que-go"
@@ -45,9 +45,8 @@ func main() {
 	mux := mux.NewRouter().StrictSlash(true)
 
 	apiMux := mux.PathPrefix("/api/").Subrouter()
-	sub := subscription.New(pool)
-	apiMux.Handle("/subscription", chain.Then(sub))
-	//apiMux.Handle("/notify", chain.Then(notify.Handler(db)))
+	apiMux.Handle("/subscription", chain.Then(subscription.New(pool)))
+	apiMux.Handle("/notify", chain.Then(notify.New(pool)))
 	apiMux.Handle("/channel", chain.Then(channel.Handler()))
 
 	mux.PathPrefix("/").Handler(chain.Then(http.FileServer(http.Dir("public"))))
