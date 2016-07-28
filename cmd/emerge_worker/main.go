@@ -3,12 +3,11 @@ package main
 import (
 	"encoding/json"
 	"log"
-	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
+	"github.com/jeepers-creepers/emerge/internal/helpers"
 	"github.com/jeepers-creepers/emerge/internal/sms"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
 
@@ -28,13 +27,13 @@ func main() {
 		log.Fatal("$REDIS_URL must be set")
 	}
 
-	pgxPool, err := newPgxPool(dbURL)
+	pgxPool, err := helpers.NewPgxPool(dbURL, afterConnect)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer pgxPool.Close()
 
-	redisPool, err := newRedisPool(redisURL)
+	redisPool, err := helpers.NewRedisPool(redisURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,12 +71,13 @@ func subscribe(pool *pgx.ConnPool) que.WorkFunc {
 }
 
 func inbox(pgxPool *pgx.ConnPool, redisPool *redis.Pool) que.WorkFunc {
-	i := sms.NewInbox(pgxPool)
 	return func(job *que.Job) error {
 		var m sms.Message
 		if err := json.Unmarshal(job.Args, &m); err != nil {
 			return err
 		}
+
+		i := sms.NewInbox(pgxPool)
 		if err := i.Add(m); err != nil {
 			return err
 		}
@@ -106,47 +106,4 @@ func afterConnect(conn *pgx.Conn) (err error) {
 		}
 	}
 	return
-}
-
-func newRedisPool(uri string) (*redis.Pool, error) {
-	u, err := url.Parse(uri)
-	if err != nil {
-		return nil, err
-	}
-	var password string
-	if u.User != nil {
-		password, _ = u.User.Password()
-	}
-	return &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", u.Host)
-			if err != nil {
-				return nil, err
-			}
-			if password != "" {
-				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-			return c, err
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}, nil
-}
-
-func newPgxPool(uri string) (pool *pgx.ConnPool, err error) {
-	cfg, err := pgx.ParseURI(uri)
-	if err != nil {
-		return
-	}
-	return pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig:   cfg,
-		AfterConnect: afterConnect,
-	})
 }

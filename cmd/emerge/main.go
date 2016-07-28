@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/jeepers-creepers/emerge/internal/channel"
+	"github.com/jeepers-creepers/emerge/internal/helpers"
 	"github.com/jeepers-creepers/emerge/internal/notify"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
 
@@ -27,27 +28,30 @@ func main() {
 		log.Fatal("$DATABASE_URL must be set")
 	}
 
-	cfg, err := pgx.ParseURI(dbURL)
-	if err != nil {
-		log.Fatal(err)
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		log.Fatal("$REDIS_URL must be set")
 	}
 
-	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig:   cfg,
-		AfterConnect: afterConnect,
-	})
+	pgxPool, err := helpers.NewPgxPool(dbURL, afterConnect)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer pool.Close()
+	defer pgxPool.Close()
+
+	redisPool, err := helpers.NewRedisPool(redisURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer redisPool.Close()
 
 	chain := alice.New(logging, recovery, cors)
 	mux := mux.NewRouter().StrictSlash(true)
 
 	apiMux := mux.PathPrefix("/api/").Subrouter()
-	apiMux.Handle("/subscription", chain.Then(subscription.New(pool)))
-	apiMux.Handle("/notify", chain.Then(notify.New(pool)))
-	apiMux.Handle("/channel", chain.Then(channel.Handler()))
+	apiMux.Handle("/subscription", chain.Then(subscription.New(pgxPool)))
+	apiMux.Handle("/notify", chain.Then(notify.New(pgxPool)))
+	apiMux.Handle("/channel", chain.Then(channel.New(redisPool)))
 
 	mux.PathPrefix("/").Handler(chain.Then(http.FileServer(http.Dir("public"))))
 
