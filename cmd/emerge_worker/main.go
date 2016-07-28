@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/jeepers-creepers/emerge/internal/sms"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
 
 	"github.com/bgentry/que-go"
@@ -41,6 +42,7 @@ func main() {
 
 	wm := que.WorkMap{
 		subscription.Subscribe: subscribe(pool),
+		sms.Inbox:              inbox(pool),
 	}
 
 	cSig := make(chan os.Signal)
@@ -61,6 +63,20 @@ func subscribe(pool *pgx.ConnPool) que.WorkFunc {
 			return err
 		}
 		if err := ss.Add(s); err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func inbox(pool *pgx.ConnPool) que.WorkFunc {
+	i := sms.NewInbox(pool)
+	return func(job *que.Job) error {
+		var m sms.Message
+		if err := json.Unmarshal(job.Args, &m); err != nil {
+			return err
+		}
+		if err := i.Add(m); err != nil {
 			return err
 		}
 		return nil
