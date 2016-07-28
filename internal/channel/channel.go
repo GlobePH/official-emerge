@@ -4,6 +4,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/jeepers-creepers/emerge/internal/sms"
+
 	"github.com/garyburd/redigo/redis"
 	"github.com/gorilla/handlers"
 	"golang.org/x/net/websocket"
@@ -28,6 +30,20 @@ func (c *channel) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (c *channel) get(w http.ResponseWriter, r *http.Request) {
 	websocket.Handler(func(ws *websocket.Conn) {
-		io.Copy(ws, ws)
+		rc := c.redisPool.Get()
+		defer rc.Close()
+		psc := redis.PubSubConn{rc}
+		psc.Subscribe(sms.Inbox)
+		for {
+			switch v := psc.Receive().(type) {
+			case redis.Message:
+				if _, err := ws.Write(v.Data); err != nil {
+					break
+				}
+			default:
+				break
+			}
+			io.Copy(ws, ws)
+		}
 	}).ServeHTTP(w, r)
 }
