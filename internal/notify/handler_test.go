@@ -9,8 +9,25 @@ import (
 
 	"github.com/jeepers-creepers/emerge/internal/sms"
 
+	"github.com/bgentry/que-go"
 	"github.com/jackc/pgx"
 )
+
+const test_json = `{
+	"inboundSMSMessageList": {
+		"inboundSMSMessage": [{
+			"dateTime":"Sat Jul 23 2016 14:06:48 GMT+0000 (UTC)",
+			"destinationAddress":"tel:29290586859",
+			"messageId":"579379f8db2c71010040c546",
+			"message":"Testing receive",
+			"resourceURL":null,
+			"senderAddress":"tel:+639171234567"
+		}],
+		"numberOfMessagesInThisBatch": 1,
+		"resourceURL": null,
+		"totalNumberOfPendingMessages": 0
+	}
+}`
 
 var handler http.Handler
 
@@ -27,7 +44,7 @@ func TestMain(m *testing.M) {
 
 	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
 		ConnConfig:   cfg,
-		AfterConnect: sms.PrepareStatements,
+		AfterConnect: afterConnect,
 	})
 	if err != nil {
 		panic(err)
@@ -47,22 +64,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-const test_json = `{
-	"inboundSMSMessageList": {
-		"inboundSMSMessage": [{
-			"dateTime":"Sat Jul 23 2016 14:06:48 GMT+0000 (UTC)",
-			"destinationAddress":"tel:29290586859",
-			"messageId":"579379f8db2c71010040c546",
-			"message":"Testing receive",
-			"resourceURL":null,
-			"senderAddress":"tel:+639171234567"
-		}],
-		"numberOfMessagesInThisBatch": 1,
-		"resourceURL": null,
-		"totalNumberOfPendingMessages": 0
-	}
-}`
-
 func TestNotify(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, "", strings.NewReader(test_json))
 	if err != nil {
@@ -74,4 +75,17 @@ func TestNotify(t *testing.T) {
 	if w.Code != http.StatusAccepted {
 		t.Fail()
 	}
+}
+
+func afterConnect(conn *pgx.Conn) (err error) {
+	var xs = []func(*pgx.Conn) error{
+		que.PrepareStatements,
+		sms.PrepareStatements,
+	}
+	for _, x := range xs {
+		if err = x(conn); err != nil {
+			return err
+		}
+	}
+	return
 }

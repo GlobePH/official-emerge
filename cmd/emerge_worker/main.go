@@ -73,9 +73,7 @@ func subscribe(pool *pgx.ConnPool) que.WorkFunc {
 
 func inbox(pgxPool *pgx.ConnPool, redisPool *redis.Pool) que.WorkFunc {
 	i := sms.NewInbox(pgxPool)
-	rc := redisPool.Get()
 	return func(job *que.Job) error {
-		defer rc.Close()
 		var m sms.Message
 		if err := json.Unmarshal(job.Args, &m); err != nil {
 			return err
@@ -83,6 +81,9 @@ func inbox(pgxPool *pgx.ConnPool, redisPool *redis.Pool) que.WorkFunc {
 		if err := i.Add(m); err != nil {
 			return err
 		}
+
+		rc := redisPool.Get()
+		defer rc.Close()
 		if err := rc.Send("PUBLISH", job.Type, job.Args); err != nil {
 			return err
 		}
