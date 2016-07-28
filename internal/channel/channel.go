@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/jeepers-creepers/emerge/internal/sms"
@@ -38,12 +37,11 @@ func (c *channel) get(w http.ResponseWriter, r *http.Request) {
 			switch v := psc.Receive().(type) {
 			case redis.Message:
 				if _, err := ws.Write(v.Data); err != nil {
-					break
+					panic(err)
 				}
 			default:
 				break
 			}
-			io.Copy(ws, ws)
 		}
 	}).ServeHTTP(w, r)
 }
