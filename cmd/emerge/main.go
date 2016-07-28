@@ -61,8 +61,17 @@ func main() {
 	log.Fatal(s.ListenAndServe())
 }
 
-func afterConnect(conn *pgx.Conn) error {
-	return que.PrepareStatements(conn)
+func afterConnect(conn *pgx.Conn) (err error) {
+	var xs = []func(*pgx.Conn) error{
+		que.PrepareStatements,
+		subscription.PrepareStatements,
+	}
+	for _, x := range xs {
+		if err = x(conn); err != nil {
+			return err
+		}
+	}
+	return
 }
 
 func logging(h http.Handler) http.Handler {

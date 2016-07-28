@@ -1,8 +1,10 @@
 package subscription
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/bgentry/que-go"
 	"github.com/gorilla/handlers"
 	"github.com/jackc/pgx"
 )
@@ -13,12 +15,12 @@ var (
 )
 
 type subscription struct {
-	ss *subscribers
+	qc *que.Client
 }
 
 func New(pool *pgx.ConnPool) *subscription {
 	return &subscription{
-		ss: NewSubscribers(pool),
+		qc: que.NewClient(pool),
 	}
 }
 
@@ -43,9 +45,15 @@ func (s *subscription) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.ss.Add(subscriber); err != nil {
+	args, err := json.Marshal(subscriber)
+	if err != nil {
 		panic(err)
 	}
+
+	s.qc.Enqueue(&que.Job{
+		Type: Subscribe,
+		Args: args,
+	})
 
 	w.WriteHeader(http.StatusAccepted)
 }
