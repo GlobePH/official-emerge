@@ -3,19 +3,18 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/jeepers-creepers/emerge/internal/sms"
 	"github.com/jeepers-creepers/emerge/internal/subscription"
 
 	"github.com/bgentry/que-go"
+	"github.com/garyburd/redigo/redis"
 	"github.com/jackc/pgx"
-)
-
-var (
-	pool *pgx.ConnPool
 )
 
 func main() {
@@ -24,25 +23,28 @@ func main() {
 		log.Fatal("$DATABASE_URL must be set")
 	}
 
-	cfg, err := pgx.ParseURI(dbURL)
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		log.Fatal("$REDIS_URL must be set")
+	}
+
+	pgxPool, err := newPgxPool(dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer pgxPool.Close()
 
-	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig:   cfg,
-		AfterConnect: afterConnect,
-	})
+	redisPool, err := newRedisPool(redisURL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer pool.Close()
+	defer redisPool.Close()
 
-	client := que.NewClient(pool)
+	client := que.NewClient(pgxPool)
 
 	wm := que.WorkMap{
-		subscription.Subscribe: subscribe(pool),
-		sms.Inbox:              inbox(pool),
+		subscription.Subscribe: subscribe(pgxPool),
+		sms.Inbox:              inbox(pgxPool, redisPool),
 	}
 
 	cSig := make(chan os.Signal)
@@ -69,14 +71,22 @@ func subscribe(pool *pgx.ConnPool) que.WorkFunc {
 	}
 }
 
-func inbox(pool *pgx.ConnPool) que.WorkFunc {
-	i := sms.NewInbox(pool)
+func inbox(pgxPool *pgx.ConnPool, redisPool *redis.Pool) que.WorkFunc {
+	i := sms.NewInbox(pgxPool)
+	rc := redisPool.Get()
 	return func(job *que.Job) error {
+		defer rc.Close()
 		var m sms.Message
 		if err := json.Unmarshal(job.Args, &m); err != nil {
 			return err
 		}
 		if err := i.Add(m); err != nil {
+			return err
+		}
+		if err := rc.Send("PUBLISH", job.Type, job.Args); err != nil {
+			return err
+		}
+		if err := rc.Flush(); err != nil {
 			return err
 		}
 		return nil
@@ -95,4 +105,47 @@ func afterConnect(conn *pgx.Conn) (err error) {
 		}
 	}
 	return
+}
+
+func newRedisPool(uri string) (*redis.Pool, error) {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, err
+	}
+	var password string
+	if u.User != nil {
+		password, _ = u.User.Password()
+	}
+	return &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", u.Host)
+			if err != nil {
+				return nil, err
+			}
+			if password != "" {
+				if _, err := c.Do("AUTH", password); err != nil {
+					c.Close()
+					return nil, err
+				}
+			}
+			return c, err
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}, nil
+}
+
+func newPgxPool(uri string) (pool *pgx.ConnPool, err error) {
+	cfg, err := pgx.ParseURI(uri)
+	if err != nil {
+		return
+	}
+	return pgx.NewConnPool(pgx.ConnPoolConfig{
+		ConnConfig:   cfg,
+		AfterConnect: afterConnect,
+	})
 }
